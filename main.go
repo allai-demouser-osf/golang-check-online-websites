@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -25,7 +28,7 @@ func readCommand() int {
 func testSite(site string) {
 	res, err := http.Get(site)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error when checking website: ", err)
 	} else if res.StatusCode == 200 {
 		fmt.Println("Site:", site, "was loaded with success!")
 	} else {
@@ -35,7 +38,7 @@ func testSite(site string) {
 
 func startMonitoring() {
 	fmt.Println("Monitoring...")
-	sites := []string{"https://www.alura.com.br", "https://www.caelum.com.br", "https://www.google.com.br"}
+	sites := readSitesFromFile()
 
 	for i := 0; i < qtdMonitoramentos; i++ {
 		for _, site := range sites {
@@ -44,6 +47,37 @@ func startMonitoring() {
 		fmt.Println("Waiting", delayInSeconds, "seconds...")
 		time.Sleep(delayInSeconds * time.Second)
 	}
+}
+
+func readSitesFromFile() []string {
+	var sites []string
+
+	file, err := os.Open("sites.txt")
+
+	if err != nil {
+		fmt.Println("Error when opening file:", err)
+		os.Exit(-1)
+	}
+
+	reader := bufio.NewReader(file)
+
+	for {
+		line, err := reader.ReadString('\n')
+		line = strings.TrimSpace(line)
+
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Println("Error when reading file:", err)
+			break
+		}
+		fmt.Println(line)
+		sites = append(sites, line)
+	}
+
+	defer file.Close()
+
+	return sites
 }
 
 func main() {
